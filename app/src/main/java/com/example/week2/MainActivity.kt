@@ -5,9 +5,6 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.animateColorAsState
-import androidx.compose.animation.core.Spring
-import androidx.compose.animation.core.spring
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.scaleIn
@@ -35,7 +32,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
-import androidx.compose.material.icons.filled.Layers
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Card
@@ -73,18 +69,7 @@ import androidx.compose.ui.unit.sp
 import com.example.week2.ui.theme.Week2_assignmentTheme
 import java.util.Locale
 
-// =======================================================================================
-// A. VERİ KATMANI (DATA LAYER) VE DERLEYİCİ SÖZLEŞMESİ (COMPILER CONTRACT)
-// =======================================================================================
-
-/**
- * Her bir donanım kaynağını temsil eden veri sınıfı.
- *
- * 1. Değişmezlik (Immutability): Çok iş parçacıklı asenkron süreçlerde Race Condition
- *    hatalarını engellemek amacıyla sınıfın tüm alanları istisnasız 'val' olarak tanımlanmıştır.
- * 2. Kararlılık Sözleşmesi: Jetpack Compose derleyicisinin akıllı atlama
- *    (Smart Recomposition Skipping) motorunu tetiklemek için @Immutable ile işaretlenmiştir.
- */
+// Donanım kaynak modelimiz (Immutability ve Smart Recomposition Skipping için @Immutable ve val alanlar)
 @Immutable
 data class HardwareItem(
     val id: String,
@@ -94,56 +79,46 @@ data class HardwareItem(
     val stockCount: Int
 )
 
-/**
- * Hocanın ödev şartnamesinde test için sağladığı sabit veri kümesi.
- */
-val initialHardwareData = listOf(
+// Başlangıç test donanım listesi
+val sampleHardwareList = listOf(
     HardwareItem(id = "101", name = "MacBook Pro M3 Max", category = "Geliştirici Bilgisayarı", cost = 3499.0, stockCount = 5),
     HardwareItem(id = "102", name = "NVIDIA RTX 4090 Sunucu", category = "Yapay Zeka / GPU", cost = 1599.0, stockCount = 2),
     HardwareItem(id = "103", name = "Google Pixel 8 Pro", category = "Mobil Test Cihazı", cost = 999.0, stockCount = 8),
     HardwareItem(id = "104", name = "Dell UltraSharp 49\"", category = "Monitör", cost = 1199.0, stockCount = 4),
     HardwareItem(id = "105", name = "Sony WH-1000XM5 Kulaklık", category = "Odaklanma Ekipmanı", cost = 399.0, stockCount = 12),
     HardwareItem(id = "106", name = "Raspberry Pi 5 8GB", category = "IoT Geliştirme Kiti", cost = 85.0, stockCount = 25),
-    HardwareItem(id = "107", name = "HHKB Professional Keyboard", category = "Ergonomik Klavye", cost = 299.0, stockCount = 0), // Stok sınırı test verisi
+    HardwareItem(id = "107", name = "HHKB Professional Keyboard", category = "Ergonomik Klavye", cost = 299.0, stockCount = 0), // Stok sınırı testi (stok 0)
     HardwareItem(id = "108", name = "AMD Ryzen Threadripper", category = "Yapay Zeka / GPU", cost = 4999.0, stockCount = 1)
 )
 
-// =======================================================================================
-// DESIGN SYSTEM TOKENS (Apple HIG + Studio DevOps Pro Aesthetic)
-// =======================================================================================
-
-private object ClusterTheme {
+// Arayüz renkleri ve tema paleti
+private object AppColors {
     val Background = Color(0xFF090D16)
-    val SurfaceCard = Color(0xFF131A29)
-    val SurfaceCardBorder = Color(0xFF1F2B42)
-    val TextPrimary = Color(0xFFF8FAFC)
-    val TextSecondary = Color(0xFF94A3B8)
+    val CardSurface = Color(0xFF131A29)
+    val CardBorder = Color(0xFF1F2B42)
+    val TextMain = Color(0xFFF8FAFC)
+    val TextSub = Color(0xFF94A3B8)
     val TextMuted = Color(0xFF64748B)
 
-    // Semantic Accents
-    val AccentCyan = Color(0xFF38BDF8)
-    val AccentEmerald = Color(0xFF10B981)
-    val AccentAmber = Color(0xFFF59E0B)
-    val AccentRose = Color(0xFFEF4444)
-    val AccentViolet = Color(0xFFA855F7)
+    val Cyan = Color(0xFF38BDF8)
+    val Emerald = Color(0xFF10B981)
+    val Amber = Color(0xFFF59E0B)
+    val Rose = Color(0xFFEF4444)
+    val Violet = Color(0xFFA855F7)
 
-    fun categoryColor(category: String): Color {
-        return when (category) {
-            "Yapay Zeka / GPU" -> AccentViolet
-            "Geliştirici Bilgisayarı" -> AccentCyan
+    fun forCategory(cat: String): Color {
+        return when (cat) {
+            "Yapay Zeka / GPU" -> Violet
+            "Geliştirici Bilgisayarı" -> Cyan
             "Mobil Test Cihazı" -> Color(0xFF60A5FA)
-            "IoT Geliştirme Kiti" -> AccentEmerald
+            "IoT Geliştirme Kiti" -> Emerald
             "Monitör" -> Color(0xFF38BDF8)
             "Odaklanma Ekipmanı" -> Color(0xFFF472B6)
-            "Ergonomik Klavye" -> AccentAmber
-            else -> TextSecondary
+            "Ergonomik Klavye" -> Amber
+            else -> TextSub
         }
     }
 }
-
-// =======================================================================================
-// MAIN ACTIVITY
-// =======================================================================================
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -151,58 +126,44 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             Week2_assignmentTheme {
-                DevClusterApp()
+                DevClusterScreen()
             }
         }
     }
 }
 
-// =======================================================================================
-// B. DURUM YÖNETİMİ VE STATEFUL CONTAINER (STATE HOISTING ROOT)
-// =======================================================================================
-
-/**
- * Tek Yönlü Veri Akışını (UDF) ve State Hoisting mimarisini yöneten merkezi Stateful kapsayıcı.
- * Bütün dinamik durumlar burada tutulur; alt bileşenler ise tamamen Stateless tasarlanmıştır.
- */
+// Ana stateful ekran (State Hoisting merkezi)
 @Composable
-fun DevClusterApp() {
-    // 1. Çalışma Zamanı Hafıza Kilidi (Slot Table):
-    // Toplam harcanan ödenek miktarı ve tahsis sayısı Compose Slot Table içerisine remember ile kilitlenir.
+fun DevClusterScreen() {
+    // Harcanan toplam bütçe ve tahsis adedi (Slot Table üzerinde remember ile saklanır)
     var totalSpentBudget by remember { mutableDoubleStateOf(0.0) }
     var totalAllocatedUnits by remember { mutableIntStateOf(0) }
 
-    // Güncel donanım kümesi (tahsis edildikçe stokları güvenle güncellenir)
-    var hardwareList by remember { mutableStateOf(initialHardwareData) }
+    // Donanım listesi state'i
+    var hardwareList by remember { mutableStateOf(sampleHardwareList) }
 
-    // 2. Konfigürasyon Değişim Koruması (rememberSaveable):
-    // Kullanıcının arama çubuğuna (TextField) harf yazdığı esnada cihazı yan çevirmesi (Portrait -> Landscape)
-    // durumunda, Activity'nin baştan kurulma döngüsüne karşı arama metni ve kategori rememberSaveable ile
-    // RAM dışı geçici Bundle alanında muhafaza edilir. Ekran döndüğünde veri kaybı yaşanmaz!
+    // Ekran döndüğünde (Activity recreation) metin ve filtre kaybolmasın diye rememberSaveable kullandım
     var searchQuery by rememberSaveable { mutableStateOf("") }
     var selectedCategory by rememberSaveable { mutableStateOf("Tümü") }
 
-    // Sabit kategori listesi ("Tümü" + veri kümesindeki benzersiz kategoriler)
+    // Kategorileri tekilleştirip listeye çeviriyoruz
     val categories = remember {
-        listOf("Tümü") + initialHardwareData.map { it.category }.distinct()
+        listOf("Tümü") + sampleHardwareList.map { it.category }.distinct()
     }
 
-    // 3. Turnike Mantığı (Memoization):
-    // Arama veya kategori filtreleme algoritmaları, her Recomposition tetiklenmesinde
-    // boş yere CPU tüketmemesi için remember(searchQuery, selectedCategory, hardwareList) turnike
-    // filtresi arkasına alınmıştır. Algoritma yalnızca ilgili anahtarlar değiştiğinde çalışır.
+    // Turnike mantığı: Filtreleme algoritması sadece query veya liste değiştiğinde yeniden hesaplansın
     val filteredList = remember(searchQuery, selectedCategory, hardwareList) {
         hardwareList.filter { item ->
-            val matchesSearch = item.name.contains(searchQuery, ignoreCase = true) ||
+            val matchesQuery = item.name.contains(searchQuery, ignoreCase = true) ||
                     item.category.contains(searchQuery, ignoreCase = true) ||
                     item.id.contains(searchQuery)
             val matchesCategory = selectedCategory == "Tümü" || item.category == selectedCategory
-            matchesSearch && matchesCategory
+            matchesQuery && matchesCategory
         }
     }
 
-    // Donanım Tahsis Etme Olayı (Event Handler)
-    val onAllocateHardware: (HardwareItem) -> Unit = { item ->
+    // Donanım tahsis edildiğinde çalışan fonksiyon
+    val handleAllocate: (HardwareItem) -> Unit = { item ->
         if (item.stockCount > 0) {
             hardwareList = hardwareList.map {
                 if (it.id == item.id) it.copy(stockCount = it.stockCount - 1) else it
@@ -212,9 +173,9 @@ fun DevClusterApp() {
         }
     }
 
-    // Küme Kaynaklarını Başa Sarma Olayı (Hocanın testlerini kolaylaştıran sıfırlama)
-    val onResetCluster: () -> Unit = {
-        hardwareList = initialHardwareData
+    // Testleri kolay sıfırlayabilmek için reset fonksiyonu
+    val handleReset = {
+        hardwareList = sampleHardwareList
         totalSpentBudget = 0.0
         totalAllocatedUnits = 0
         searchQuery = ""
@@ -223,22 +184,22 @@ fun DevClusterApp() {
 
     Scaffold(
         modifier = Modifier.fillMaxSize(),
-        containerColor = ClusterTheme.Background
-    ) { innerPadding ->
+        containerColor = AppColors.Background
+    ) { paddingValues ->
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(innerPadding)
+                .padding(paddingValues)
         ) {
-            // Dashboard Metrik Başlığı (Stateless)
-            ClusterDashboardHeader(
-                totalSpentBudget = totalSpentBudget,
-                totalAllocatedUnits = totalAllocatedUnits,
-                remainingStockCount = hardwareList.sumOf { it.stockCount },
-                onResetClick = onResetCluster
+            // Üst metrik paneli (Stateless)
+            ClusterHeader(
+                totalSpent = totalSpentBudget,
+                allocatedCount = totalAllocatedUnits,
+                remainingStock = hardwareList.sumOf { it.stockCount },
+                onReset = handleReset
             )
 
-            // Arama Çubuğu (Stateless)
+            // Arama çubuğu (Stateless)
             HardwareSearchBar(
                 query = searchQuery,
                 onQueryChange = { searchQuery = it },
@@ -247,18 +208,18 @@ fun DevClusterApp() {
                     .padding(horizontal = 16.dp, vertical = 4.dp)
             )
 
-            // Kategori Hapları (Scope Bar - Stateless)
+            // Kategori filtreleme çipleri (Stateless)
             CategoryFilterRow(
                 categories = categories,
                 selectedCategory = selectedCategory,
                 onCategorySelected = { selectedCategory = it }
             )
 
-            // C. Liste Mimarisi ve GPU Hücre Dönüşümü (LazyColumn)
+            // LazyColumn ile donanım listesi
             HardwareListContent(
                 items = filteredList,
-                onItemClick = onAllocateHardware,
-                onClearFilterClick = {
+                onItemClick = handleAllocate,
+                onClearSearch = {
                     searchQuery = ""
                     selectedCategory = "Tümü"
                 },
@@ -268,20 +229,12 @@ fun DevClusterApp() {
     }
 }
 
-// =======================================================================================
-// C. LİSTE MİMARİSİ (LAZYCOLUMN VE NOKTA ATIŞI RECOMPOSITION)
-// =======================================================================================
-
-/**
- * Donanım listesini GPU dostu Tembel Yükleme (Lazy Loading) ile sunan bileşen.
- * Standart forEach döngüleri kesinlikle kullanılmamış, LazyColumn mimarisi entegre edilmiştir.
- * Nokta atışı recomposition için key = { it.id } parametresi zorunlu olarak geçilmiştir.
- */
+// LazyColumn liste bileşeni (Stateless)
 @Composable
 fun HardwareListContent(
     items: List<HardwareItem>,
     onItemClick: (HardwareItem) -> Unit,
-    onClearFilterClick: () -> Unit,
+    onClearSearch: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     if (items.isEmpty()) {
@@ -299,28 +252,28 @@ fun HardwareListContent(
                     modifier = Modifier
                         .size(56.dp)
                         .clip(CircleShape)
-                        .background(ClusterTheme.SurfaceCard)
-                        .border(1.dp, ClusterTheme.SurfaceCardBorder, CircleShape),
+                        .background(AppColors.CardSurface)
+                        .border(1.dp, AppColors.CardBorder, CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Icon(
                         imageVector = Icons.Default.Search,
                         contentDescription = null,
-                        tint = ClusterTheme.TextMuted,
+                        tint = AppColors.TextMuted,
                         modifier = Modifier.size(24.dp)
                     )
                 }
 
                 Text(
-                    text = "Aramaya uygun donanım bulunamadı",
-                    color = ClusterTheme.TextPrimary,
+                    text = "Sonuç bulunamadı",
+                    color = AppColors.TextMain,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.SemiBold
                 )
 
                 Text(
-                    text = "Farklı bir arama terimi veya kategori deneyin.",
-                    color = ClusterTheme.TextMuted,
+                    text = "Arama kriterlerinizi değiştirmeyi deneyebilirsiniz.",
+                    color = AppColors.TextMuted,
                     fontSize = 13.sp
                 )
 
@@ -329,14 +282,14 @@ fun HardwareListContent(
                 Box(
                     modifier = Modifier
                         .clip(RoundedCornerShape(8.dp))
-                        .background(ClusterTheme.SurfaceCard)
-                        .border(1.dp, ClusterTheme.SurfaceCardBorder, RoundedCornerShape(8.dp))
-                        .clickable(onClick = onClearFilterClick)
+                        .background(AppColors.CardSurface)
+                        .border(1.dp, AppColors.CardBorder, RoundedCornerShape(8.dp))
+                        .clickable(onClick = onClearSearch)
                         .padding(horizontal = 14.dp, vertical = 8.dp)
                 ) {
                     Text(
-                        text = "Filtreleri Temizle",
-                        color = ClusterTheme.AccentCyan,
+                        text = "Filtreleri Sıfırla",
+                        color = AppColors.Cyan,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold
                     )
@@ -349,15 +302,13 @@ fun HardwareListContent(
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 6.dp, bottom = 20.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Nokta Atışı Recomposition:
-            // Listenin ortasından bir donanımın stoğu değiştiğinde tüm listenin baştan
-            // çizilmesini önlemek amacıyla items bloğuna benzersiz anahtar key = { it.id } geçilmiştir.
+            // Nokta atışı recomposition için key = { it.id } zorunlu
             items(
                 items = items,
                 key = { it.id }
-            ) { hardwareItem ->
+            ) { item ->
                 HardwareCard(
-                    item = hardwareItem,
+                    item = item,
                     onItemClick = onItemClick
                 )
             }
@@ -365,20 +316,13 @@ fun HardwareListContent(
     }
 }
 
-// =======================================================================================
-// D. MİMARİ AYRIŞMA DİSİPLİNİ (STATELESS UI BILEŞENLERİ)
-// =======================================================================================
-
-/**
- * DevCluster Dashboard Metrik Başlığı - Tamamen Stateless.
- * Apple HIG'deki System Monitor ve Control Center göstergelerinden esinlenilmiştir.
- */
+// Üst bilgi ve bütçe kartı (Stateless)
 @Composable
-fun ClusterDashboardHeader(
-    totalSpentBudget: Double,
-    totalAllocatedUnits: Int,
-    remainingStockCount: Int,
-    onResetClick: () -> Unit,
+fun ClusterHeader(
+    totalSpent: Double,
+    allocatedCount: Int,
+    remainingStock: Int,
+    onReset: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     Card(
@@ -386,35 +330,31 @@ fun ClusterDashboardHeader(
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 10.dp),
         shape = RoundedCornerShape(22.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = ClusterTheme.SurfaceCard
-        ),
-        border = BorderStroke(1.dp, ClusterTheme.SurfaceCardBorder),
-        elevation = CardDefaults.cardElevation(defaultElevation = 8.dp)
+        colors = CardDefaults.cardColors(containerColor = AppColors.CardSurface),
+        border = BorderStroke(1.dp, AppColors.CardBorder),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(18.dp)
         ) {
-            // Üst Satır: Sistem Başlığı, Durum Işığı ve Sıfırlama Butonu
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
-                    // Pulsing / Active Node Indicator
                     Box(
                         modifier = Modifier
                             .size(9.dp)
                             .clip(CircleShape)
-                            .background(ClusterTheme.AccentEmerald)
+                            .background(AppColors.Emerald)
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
                         text = "DEVCLUSTER MONITOR",
-                        color = ClusterTheme.AccentCyan,
+                        color = AppColors.Cyan,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.ExtraBold,
                         letterSpacing = 1.3.sp,
@@ -423,7 +363,7 @@ fun ClusterDashboardHeader(
                 }
 
                 IconButton(
-                    onClick = onResetClick,
+                    onClick = onReset,
                     modifier = Modifier
                         .size(32.dp)
                         .clip(CircleShape)
@@ -431,8 +371,8 @@ fun ClusterDashboardHeader(
                 ) {
                     Icon(
                         imageVector = Icons.Default.Refresh,
-                        contentDescription = "Simülasyonu Sıfırla",
-                        tint = ClusterTheme.TextSecondary,
+                        contentDescription = "Sıfırla",
+                        tint = AppColors.TextSub,
                         modifier = Modifier.size(17.dp)
                     )
                 }
@@ -440,17 +380,15 @@ fun ClusterDashboardHeader(
 
             Spacer(modifier = Modifier.height(14.dp))
 
-            // Metrik Tablosu
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.Bottom
             ) {
-                // Toplam Harcanan Ödenek (Slot Table State)
                 Column {
                     Text(
                         text = "HARCANAN ÖDENEK",
-                        color = ClusterTheme.TextMuted,
+                        color = AppColors.TextMuted,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.SemiBold,
                         letterSpacing = 0.8.sp,
@@ -458,47 +396,44 @@ fun ClusterDashboardHeader(
                     )
                     Spacer(modifier = Modifier.height(3.dp))
                     Text(
-                        text = "$${String.format(Locale.US, "%,.2f", totalSpentBudget)}",
-                        color = ClusterTheme.TextPrimary,
+                        text = "$${String.format(Locale.US, "%,.2f", totalSpent)}",
+                        color = AppColors.TextMain,
                         fontSize = 26.sp,
                         fontWeight = FontWeight.Bold,
                         fontFamily = FontFamily.Monospace
                     )
                 }
 
-                // Tahsis & Stok Rozetleri
                 Row(horizontalArrangement = Arrangement.spacedBy(14.dp)) {
-                    // Tahsis Edilen
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = "TAHSİS",
-                            color = ClusterTheme.TextMuted,
+                            color = AppColors.TextMuted,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = FontFamily.Monospace
                         )
                         Spacer(modifier = Modifier.height(2.dp))
                         Text(
-                            text = "$totalAllocatedUnits adet",
-                            color = ClusterTheme.AccentCyan,
+                            text = "$allocatedCount adet",
+                            color = AppColors.Cyan,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
                         )
                     }
 
-                    // Kalan Stok
                     Column(horizontalAlignment = Alignment.End) {
                         Text(
                             text = "KALAN STOK",
-                            color = ClusterTheme.TextMuted,
+                            color = AppColors.TextMuted,
                             fontSize = 10.sp,
                             fontWeight = FontWeight.SemiBold,
                             fontFamily = FontFamily.Monospace
                         )
                         Spacer(modifier = Modifier.height(2.dp))
-                        val stockColor = if (remainingStockCount > 10) ClusterTheme.AccentEmerald else ClusterTheme.AccentAmber
+                        val stockColor = if (remainingStock > 10) AppColors.Emerald else AppColors.Amber
                         Text(
-                            text = "$remainingStockCount",
+                            text = "$remainingStock",
                             color = stockColor,
                             fontSize = 15.sp,
                             fontWeight = FontWeight.Bold
@@ -510,10 +445,7 @@ fun ClusterDashboardHeader(
     }
 }
 
-/**
- * Arama Çubuğu - Tamamen Stateless.
- * İçinde hiçbir yerel remember hücresi barındırmaz (State Down, Events Up).
- */
+// Arama kutusu bileşeni (Stateless)
 @Composable
 fun HardwareSearchBar(
     query: String,
@@ -527,7 +459,7 @@ fun HardwareSearchBar(
         placeholder = {
             Text(
                 text = "Donanım adı, kategori veya #ID...",
-                color = ClusterTheme.TextMuted,
+                color = AppColors.TextMuted,
                 fontSize = 14.sp
             )
         },
@@ -535,7 +467,7 @@ fun HardwareSearchBar(
             Icon(
                 imageVector = Icons.Default.Search,
                 contentDescription = "Ara",
-                tint = ClusterTheme.AccentCyan,
+                tint = AppColors.Cyan,
                 modifier = Modifier.size(19.dp)
             )
         },
@@ -548,8 +480,8 @@ fun HardwareSearchBar(
                 IconButton(onClick = { onQueryChange("") }) {
                     Icon(
                         imageVector = Icons.Default.Clear,
-                        contentDescription = "Aramayı Temizle",
-                        tint = ClusterTheme.TextSecondary,
+                        contentDescription = "Temizle",
+                        tint = AppColors.TextSub,
                         modifier = Modifier.size(18.dp)
                     )
                 }
@@ -558,20 +490,18 @@ fun HardwareSearchBar(
         singleLine = true,
         shape = RoundedCornerShape(14.dp),
         colors = OutlinedTextFieldDefaults.colors(
-            focusedTextColor = ClusterTheme.TextPrimary,
-            unfocusedTextColor = ClusterTheme.TextPrimary,
-            focusedContainerColor = ClusterTheme.SurfaceCard,
-            unfocusedContainerColor = ClusterTheme.SurfaceCard,
-            focusedBorderColor = ClusterTheme.AccentCyan,
-            unfocusedBorderColor = ClusterTheme.SurfaceCardBorder,
-            cursorColor = ClusterTheme.AccentCyan
+            focusedTextColor = AppColors.TextMain,
+            unfocusedTextColor = AppColors.TextMain,
+            focusedContainerColor = AppColors.CardSurface,
+            unfocusedContainerColor = AppColors.CardSurface,
+            focusedBorderColor = AppColors.Cyan,
+            unfocusedBorderColor = AppColors.CardBorder,
+            cursorColor = AppColors.Cyan
         )
     )
 }
 
-/**
- * Kategori Filtreleme Çipleri (Scope Bar) - Tamamen Stateless.
- */
+// Kategori hapları (Stateless)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CategoryFilterRow(
@@ -598,16 +528,16 @@ fun CategoryFilterRow(
                     )
                 },
                 colors = FilterChipDefaults.filterChipColors(
-                    containerColor = ClusterTheme.SurfaceCard,
-                    labelColor = ClusterTheme.TextSecondary,
+                    containerColor = AppColors.CardSurface,
+                    labelColor = AppColors.TextSub,
                     selectedContainerColor = Color(0xFF0369A1),
                     selectedLabelColor = Color.White
                 ),
                 border = FilterChipDefaults.filterChipBorder(
                     enabled = true,
                     selected = isSelected,
-                    borderColor = ClusterTheme.SurfaceCardBorder,
-                    selectedBorderColor = ClusterTheme.AccentCyan
+                    borderColor = AppColors.CardBorder,
+                    selectedBorderColor = AppColors.Cyan
                 ),
                 shape = RoundedCornerShape(10.dp)
             )
@@ -615,18 +545,7 @@ fun CategoryFilterRow(
     }
 }
 
-/**
- * Donanım Kartı - Tamamen Stateless.
- *
- * 1. Saf Fonksiyon Tasarımı: İçerisinde hiçbir yerel remember hücresi barındırmaz.
- * 2. State Hoisting: Veriyi yukarıdan parametre olarak alır (item), tıklama olayını
- *    lambda callback ile ana container'a fırlatır (onItemClick).
- * 3. Modifier Sıralaması Kuralı: Hocanın açıkça belirttiği gibi:
- *    "kart bileşenlerinde önce .clickable(), ardından .padding() hiyerarşisi işletilerek
- *    görsel margin hatalarının önüne geçilmelidir."
- * 4. Stok Sınırı Koruması: Stok 0 ise (HHKB örneğindeki test verisi) tıklama pasifize edilir,
- *    kart opaklığı 0.55f'e düşürülür ve kırmızı "TÜKENDİ" rozeti gösterilir.
- */
+// Donanım Kartı (Stateless)
 @Composable
 fun HardwareCard(
     item: HardwareItem,
@@ -634,25 +553,21 @@ fun HardwareCard(
     modifier: Modifier = Modifier
 ) {
     val isOutOfStock = item.stockCount == 0
-    val categoryAccent = ClusterTheme.categoryColor(item.category)
+    val categoryColor = AppColors.forCategory(item.category)
 
     Card(
         modifier = modifier
             .fillMaxWidth()
             .alpha(if (isOutOfStock) 0.52f else 1.0f),
         shape = RoundedCornerShape(18.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = ClusterTheme.SurfaceCard
-        ),
+        colors = CardDefaults.cardColors(containerColor = AppColors.CardSurface),
         border = BorderStroke(
             width = 1.dp,
-            color = if (isOutOfStock) Color(0xFF283447) else ClusterTheme.SurfaceCardBorder
+            color = if (isOutOfStock) Color(0xFF283447) else AppColors.CardBorder
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp)
     ) {
-        // MODIFIER SIRALAMASI KURALI:
-        // Önce .clickable(), hemen ardından .padding() hiyerarşisi işletilmiştir.
-        // Bu sayede dokunma dalgası (ripple) kartın köşelerini tam kapsar ve margin taşma hatası oluşmaz.
+        // Modifier sıralaması: ripple sınırları için önce clickable, ardından padding
         Row(
             modifier = Modifier
                 .fillMaxWidth()
@@ -664,9 +579,7 @@ fun HardwareCard(
             verticalAlignment = Alignment.CenterVertically,
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            // Sol Taraf: Donanım Bilgileri
             Column(modifier = Modifier.weight(1f)) {
-                // Kategori Rozeti ve ID Etiketi
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -674,19 +587,19 @@ fun HardwareCard(
                     Box(
                         modifier = Modifier
                             .background(
-                                color = categoryAccent.copy(alpha = 0.15f),
+                                color = categoryColor.copy(alpha = 0.15f),
                                 shape = RoundedCornerShape(6.dp)
                             )
                             .border(
                                 width = 0.8.dp,
-                                color = categoryAccent.copy(alpha = 0.35f),
+                                color = categoryColor.copy(alpha = 0.35f),
                                 shape = RoundedCornerShape(6.dp)
                             )
                             .padding(horizontal = 7.dp, vertical = 2.dp)
                     ) {
                         Text(
                             text = item.category,
-                            color = categoryAccent,
+                            color = categoryColor,
                             fontSize = 11.sp,
                             fontWeight = FontWeight.SemiBold
                         )
@@ -694,7 +607,7 @@ fun HardwareCard(
 
                     Text(
                         text = "#${item.id}",
-                        color = ClusterTheme.TextMuted,
+                        color = AppColors.TextMuted,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium,
                         fontFamily = FontFamily.Monospace
@@ -703,10 +616,9 @@ fun HardwareCard(
 
                 Spacer(modifier = Modifier.height(7.dp))
 
-                // Donanım Adı
                 Text(
                     text = item.name,
-                    color = ClusterTheme.TextPrimary,
+                    color = AppColors.TextMain,
                     fontSize = 16.sp,
                     fontWeight = FontWeight.Bold,
                     maxLines = 1,
@@ -715,10 +627,9 @@ fun HardwareCard(
 
                 Spacer(modifier = Modifier.height(6.dp))
 
-                // Fiyat
                 Text(
                     text = "$${String.format(Locale.US, "%,.2f", item.cost)}",
-                    color = ClusterTheme.AccentEmerald,
+                    color = AppColors.Emerald,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold,
                     fontFamily = FontFamily.Monospace
@@ -727,7 +638,6 @@ fun HardwareCard(
 
             Spacer(modifier = Modifier.width(14.dp))
 
-            // Sağ Taraf: Stok Durumu ve Tahsis Et Eylemi
             Column(
                 horizontalAlignment = Alignment.End,
                 verticalArrangement = Arrangement.Center
@@ -736,12 +646,12 @@ fun HardwareCard(
                     Box(
                         modifier = Modifier
                             .background(
-                                color = ClusterTheme.AccentRose.copy(alpha = 0.15f),
+                                color = AppColors.Rose.copy(alpha = 0.15f),
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .border(
                                 width = 1.dp,
-                                color = ClusterTheme.AccentRose.copy(alpha = 0.45f),
+                                color = AppColors.Rose.copy(alpha = 0.45f),
                                 shape = RoundedCornerShape(8.dp)
                             )
                             .padding(horizontal = 10.dp, vertical = 6.dp)
@@ -777,7 +687,7 @@ fun HardwareCard(
 
                     Text(
                         text = "Stok: ${item.stockCount} adet",
-                        color = if (item.stockCount <= 2) ClusterTheme.AccentAmber else ClusterTheme.TextMuted,
+                        color = if (item.stockCount <= 2) AppColors.Amber else AppColors.TextMuted,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Medium
                     )
@@ -787,14 +697,10 @@ fun HardwareCard(
     }
 }
 
-// =======================================================================================
-// PREVIEW
-// =======================================================================================
-
 @Preview(showBackground = true, backgroundColor = 0xFF090D16)
 @Composable
-fun DevClusterAppPreview() {
+fun DevClusterScreenPreview() {
     Week2_assignmentTheme {
-        DevClusterApp()
+        DevClusterScreen()
     }
 }
