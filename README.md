@@ -1,10 +1,10 @@
-# DevCluster: Donanım ve Sunucu Kaynak Yönetim Simülatörü 🚀
+# DevCluster: Donanım ve Sunucu Kaynak Yönetim Simülatörü
 
 Bu proje, **BIL 403 Mobil Uygulama Geliştirme** dersi kapsamında geliştirilmiş, Google'ın modern **Bildirimsel Arayüz (Declarative UI / Jetpack Compose)** yaklaşımını, **Tek Yönlü Veri Akışı (Unidirectional Data Flow - UDF)** prensiplerini ve gelişmiş bellek/performans optimizasyonlarını hayata geçiren simülatör uygulamasıdır.
 
 ---
 
-## 🛠 Mimari ve Teknik Katmanlar
+## Mimari ve Teknik Katmanlar
 
 ### 1. Veri Katmanı (Data Layer) ve Derleyici Sözleşmesi
 - **Değişmezlik (Immutability):** `HardwareItem` data class'ının tüm alanları çok iş parçacıklı (multithreaded) ortamlarda Race Condition hatalarını engellemek amacıyla istisnasız `val` anahtar kelimesiyle tanımlanmıştır.
@@ -43,14 +43,14 @@ data class HardwareItem(
 
 ---
 
-## 💻 Sabit Test Veri Kümesi ve Uç Durum (Edge Case)
+## Sabit Test Veri Kümesi ve Uç Durum (Edge Case)
 Hocanın sağladığı veri kümesinde yer alan **#107 ID'li HHKB Professional Keyboard (stockCount = 0)** donanımı için stok sınırı koruması eklenmiştir:
 - Stok `0` olduğunda kart otomatik olarak pasifize edilir (`clickable` devre dışı).
 - Kart üzerinde kırmızı **TÜKENDİ** rozeti gösterilir ve donanım bütçeyi eksiye düşürmez.
 
 ---
 
-## 📱 Proje ve Teslim Bilgileri
+## Proje ve Teslim Bilgileri
 - **Ders:** BIL 403 Mobil Uygulama Geliştirme
 - **Paket Adı:** `com.example.week2`
 - **Ana Dosya:** `app/src/main/java/com/example/week2/MainActivity.kt`
